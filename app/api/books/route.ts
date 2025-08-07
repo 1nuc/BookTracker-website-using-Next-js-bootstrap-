@@ -12,7 +12,7 @@ async function getUserFromToken(token: string) {
   return user
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request) {
   const token = req.headers.get('authorization')?.split(' ')[1]
   if (!token) return NextResponse.json({ error: 'Missing token' }, { status: 401 })
 
@@ -45,7 +45,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request) {
   const token = req.headers.get('authorization')?.split(' ')[1]
   if (!token) return NextResponse.json({ error: 'Missing token' }, { status: 401 })
 

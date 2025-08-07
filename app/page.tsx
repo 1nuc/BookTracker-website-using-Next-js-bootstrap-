@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,7 +14,8 @@ type Book = {
   user_id?: string
 }
 
-export default function Dashboard() {
+// Separate component that uses useSearchParams
+function DashboardContent() {
   const [books, setBooks] = useState<Book[]>([])
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
@@ -92,7 +93,7 @@ export default function Dashboard() {
   }, [router]) // Removed searchParams and filter from dependencies
 
   // Updated fetchBooks to accept filter as parameter
-  const fetchBooks = async (access_token: string, uid: string, currentFilter: string = filter) => {
+  const fetchBooks = useCallback(async (access_token: string, uid: string, currentFilter: string = filter) => {
     try {
       console.log('Fetching books with status:', currentFilter)
       const query = currentFilter !== 'all' ? `?status=${currentFilter}` : ''
@@ -104,7 +105,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Failed to fetch books:', err)
     }
-  }
+  }, [filter])
   
   // Fixed handleFilterChange to pass the new filter value immediately
   const handleFilterChange = (newFilter: string) => {
@@ -373,5 +374,28 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading fallback component
+function DashboardLoading() {
+  return (
+    <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center">
+      <div className="text-center">
+        <div className="spinner-border text-primary mb-3" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="text-muted">Loading your books...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main component with Suspense wrapper
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
   )
 }

@@ -40,33 +40,56 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
   }
 }
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const token = req.headers.get('authorization')?.split(' ')[1]
+  const { id } = await params
   const { status } = await req.json()
 
-  const { data, error } = await supabase
-    .from('books')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+  if (!token) {
+    return NextResponse.json({ error: 'Missing token' }, { status: 401 })
   }
 
-  return NextResponse.json(data)
+  try {
+    const user = await getUserFromToken(token)
+
+    const { data, error } = await supabase
+      .from('books')
+      .update({ status })
+      .eq('id', id)
+      .eq('user_id', user.id) // Add user_id check for security
+      .select()
+      .single()
+
+    if (error) throw error
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('PUT /api/books/[id] error:', error)
+    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
+  }
 }
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const token = req.headers.get('authorization')?.split(' ')[1]
+  const { id } = await params
   const { title, author, status } = await req.json()
+
+  if (!token) {
+    return NextResponse.json({ error: 'Missing token' }, { status: 401 })
+  }
 
   if (!title || !author || !['reading', 'completed', 'wishlist'].includes(status)) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   }
 
   try {
-    const user = await getUserFromToken(req.headers.get('authorization')?.split(' ')[1] || '')
+    const user = await getUserFromToken(token)
     const { data, error } = await supabase
       .from('books')
       .update({ title, author, status })

@@ -41,8 +41,12 @@ export default function AuthPage() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       if (data.user) router.push('/')
-    } catch (error: any) {
-      setMessage(error.message)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage(error.message)
+      } else {
+        setMessage('An unknown error occurred.')
+      }
     } finally {
       setLoading(false)
     }
@@ -66,11 +70,15 @@ export default function AuthPage() {
       } else {
         setMessage('Please check your email to confirm your account.')
       }
-    } catch (error: any) {
-      setMessage(error.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+          setMessage(error.message)
+        } else {
+          setMessage('An unknown error occurred.')
+        }
+      } finally {
+        setLoading(false)
+      }
   }
 
   return (
